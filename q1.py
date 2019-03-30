@@ -28,14 +28,14 @@ def firstGreedyShortestPath(dict_loc, start_location, all_cities, k):
         mini = 99999999
         low_k = ''
         index=0
-        for j in  range (0, len(all_cities)):
+        for j in range(0, len(all_cities)):
             city = all_cities[j]
             if j not in selected_order_ids and curr != all_cities[j] and mini > dict_loc[curr][city]:
                 mini = dict_loc[curr][city]
                 low_k = city
                 index = j
         selected_order_ids.append(index)
-        curr=low_k
+        curr = low_k
     return tuple(selected_order_ids)
 
 def returnOrders(list_orders, orders):
