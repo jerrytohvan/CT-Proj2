@@ -15,97 +15,112 @@ def store_in_dict(locations):
     return dd
 
 
-def firstGreedyShortestPath(dict_loc, start_location, all_cities, k):
+def firstGreedyShortestPath(dict_loc, start_location, all_orders, k):
     #all_cities: ['RUS', 'CAN', 'SIN', 'KOR', 'CHN', 'MEX', 'AUS', 'GMY', 'FRN', 'SPN']
     #k: length of orders 
     selected_order_ids = []
+
     curr = start_location
-    cost = 0
     while len(selected_order_ids) != k:
         #least dist 
         mini = 99999999
         low_k = ''
         index=0
-        for j in  range (0, len(all_cities)):
-            city = all_cities[j]
-            if j not in selected_order_ids and curr != all_cities[j] and mini > dict_loc[curr][city]:
-                mini = dict_loc[curr][city]
+        for j in  range (0, len(all_orders)):
+            city = all_orders[j][2]
+            if j not in selected_order_ids and curr != city and mini > int(dict_loc[curr][city]):
+                mini = int(dict_loc[curr][city])
                 low_k = city
                 index = j
-                cost += mini
         selected_order_ids.append(index)
         curr=low_k
-
-
-    return [cost, tuple(selected_order_ids)]
+    return tuple(selected_order_ids)
 
 def returnOrders(list_orders, orders):
     return [orders[i] for i in list_orders]
 
-def findCombinationsWithCap(orders,limit):
-    return ""
+def findNextCityWithLeastDiff(dict_loc, start_location, orders, cap):
+    cap_diff_list = []
+    index=0   
+    curr = start_location
+    for j in  range (0, len(orders)):
+        city = orders[j][2]
+        if curr != city:
+            order_weight = int(orders[j][1])
+            diff = cap - order_weight
+            dist = int(dict_loc[curr][city])
+            if(diff >=0):
+                cap_diff_list.append([j,dist,diff])
+    if len(cap_diff_list) == 0:
+        return -1
+    cap_diff_list = sorted(cap_diff_list,key=lambda x:  (x[1], x[2]))   
+    return cap_diff_list[0][0]
 
-def findShortestPath(list_combinations, dict_loc, start_location,cap):
-    cost_paths = []
-    weight_paths = []
-    for path in list_combinations:
-        all_cities =  ([i[2] for i in path])
-        ids = firstGreedyShortestPath(dict_loc,start_location,all_cities, len(path))
-        orders = returnOrders(ids[1],path)
-        # weight - cap absolute difference
-        weight_path = cap - sum([i[1] for i in orders])
-        if(weight_path >=0):
-            cost_paths.append([ids[0], orders,weight_path])
-
-    cost_paths = sorted(cost_paths,key=lambda x:  (x[2], x[0]))
-    return cost_paths[0][1]
 
 def schedule2(locations, start_location, capacities, orders):
-    # TODO: replace the code in this function with your algorithm
-    # orders: Order ID, Weight, Delivery location
-    # This simple model solution does not make use of locations
-    # However, to optimize your longest traveling time, you should use the information in locations.
-   
-#[[(2, 150, 'CAN'), (5, 200, 'CHN'), (1, 100, 'RUS'), (9, 180, 'FRN')], [(2, 150, 'CAN'), (1, 100, 'RUS')], [(1, 100, 'RUS')], [(2, 150, 'CAN'), (1, 100, 'RUS'), (9, 180, 'FRN')], [(2, 150, 'CAN'), (10, 230, 'SPN'), (5, 200, 'CHN'), (1, 100, 'RUS'), (9, 180, 'FRN')]]
+    #stores orders before finding shortest path
     max_list = []
-    for i in range(len(capacities)):
+    #stores weight left for each truck in a 2D
+    total_weight_list = []
+    #stores the last location as starting point to look for other short distance to the next city
+    start_location_list = []
+    #stores the orders after finding shortest path )(THIS IS FINAL RESULT)
+    temp_max_list = []
+
+    #initialise arrays with existing values before processing
+    for i in range(0,len(capacities)):
         max_list.append([])
+        temp_max_list.append([])
+        total_weight_list.append([int(capacities[i])])
+        start_location_list.append([start_location])
 
+    #transform locations_1 to dictionary form
     dict_loc= store_in_dict(locations)
+
+    #loops not sure how many times but until all orders are inserted
+    while len(orders)!=0: 
+        #loops each truck: This ensure fair distribution for every loop. At every loop algo will find the shortest distance to the next city
+        for i in range (0,len(capacities)):
+            #ignore if current cap left over for the truck is 0. It keeps looping if 0 is not reach but no order can fill the gap.
+            if total_weight_list[i][0]>0:
+                #find index of the next city which has the last distance from where the truck is at currently and that it meets the cap
+                index = findNextCityWithLeastDiff(dict_loc, start_location_list[i][0],orders,total_weight_list[i][0])
+                #if the index exists, means that it has meet the current capacity availability
+                if index != -1:
+                    #add order to the current max_list
+                    max_list[i].append(orders[index])
+                    #reduce current cap by the weight of the order for next round
+                    total_weight_list[i][0] -= orders[index][1]
+                    #change last location of the truck
+                    start_location_list[i][0] = orders[index][2]
+                    #remove order so that i wont be taken into account for the next round
+                    orders.pop(index)
+
+    #optimise differences here =================
+    #Jerry: I think what you can do is to run simulation of which order in 2 array cant be swapped that will result to lesser distance, you can use write a algo similar to firstGreedyShortestPath to find the lesser path. 
+    #If the total route distance is lesser than the current minimum, swap. Loop this process for n number of simulation as an input. That should work efficiently :) based on statistic this will result to better distance as the n simulation grows
     
-    orders.sort(key=lambda x: x[1])
-    orders_id = ([i[0] for i in orders]) 
-    orders_weight = ([i[1] for i in orders]) 
-    max_list_index = 0
+    #===== EXAMPLE ====
+    # n_simul = 5000
+    # for rounds in n_simul:
+    #     for trucks in max_list:
+    #         for truct in trucks:
+                #can it maybe do a random pick to swap 2 cities on 2 routes by picking 2 random trucks and 2 orders
+                #if can compute all distance is it lesser than the initial route order?
+                #if yes change max_list to current orders
 
-    n_simulation = 10
 
-    for cap in capacities:
-        #get all possible combinations with total sum, returns index
-        cap_orders = []
-        for i in range(len(orders), 0, -1):
-            for seq in itertools.combinations(orders_id, i):
-                total = [orders_weight[j] for j in range(0,len(seq))]
-                if sum(total) <= cap:
-                    obj_orders = [orders[j] for j in range(0,len(seq))]
-                    obj_orders = set(obj_orders)
-                    cap_orders.append(list(obj_orders))
+    #end of optimations ====================
 
-        # cap_orders = returnOrders(cap_orders_id, orders)
-        cap_orders= [list(t) for t in set(tuple(element) for element in cap_orders)]
-        shortest_path = findShortestPath(cap_orders, dict_loc, start_location,cap)
-        # print(shortest_path[1])
-        #insert to truck
-        max_list[max_list_index] = shortest_path
-        
-        # remove cities from orders
-
-        for i in shortest_path:
-            for j in orders:
-                if i == j:
-                    orders.remove(j)
- 
-        max_list_index+=1
-    return max_list
+    #find shortest path for all orders in the max_list
+    index = 0
+    for each_orders in max_list:
+        all_cities =  ([i[2] for i in each_orders])
+        #find shortest path from current order : returns indexes
+        shortest_path = firstGreedyShortestPath(dict_loc,start_location, each_orders,len(all_cities))
+        #get all orders with current order
+        temp_max_list[index] = returnOrders(shortest_path, each_orders)
+        index +=1
+    return temp_max_list
 
   
