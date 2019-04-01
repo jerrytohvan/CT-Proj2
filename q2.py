@@ -1,5 +1,5 @@
 # Team ID: G4T12
-import itertools, operator, copy
+import itertools, operator, copy, random
 
 
 def store_in_dict(locations):
@@ -106,7 +106,8 @@ def schedule2(locations, start_location, capacities, orders):
         # ===== EXAMPLE ====
         #
 
-    # optimsation(capacities, max_list, dict_loc)
+    optimsation(capacities, max_list, dict_loc)
+
 
     # calculate total distance of each truck
 
@@ -150,26 +151,78 @@ def truck_weight(truck):
 
 # this is supposed to optimize the code c
 def optimsation(capacities, max_list, dict_loc):
+    # for rounds in n_simul:
+    #     for trucks in max_list:
+    #         for truct in trucks:
+
     temp_max_list = copy.deepcopy(max_list)
     temp_cap_list = copy.deepcopy(capacities)
-    num_iter = 500
 
-    for i in range(len(temp_max_list) - 1):
-        # get truck capacities
-        truck_cap1 = temp_cap_list[i]
-        truck_cap2 = temp_cap_list[i + 1]
-        # store truck 1 as temp and swap
-        temp = temp_max_list[i][0]
-        temp_max_list[i][0] = temp_max_list[i + 1][0]
-        temp_max_list[i + 1][0] = temp
-        # validate
-        truck1 = temp_max_list[i]
-        truck2 = temp_max_list[i + 1]
-        print(truck_weight(truck1))
-        print(truck_cap1)
-        if truck_weight(truck1) < truck_cap1 and truck_weight(truck2) < truck_cap2:
-            # then make swap real
-            max_list[i][0] = temp_max_list[i][0]
-            max_list[i+1][0] = temp_max_list[i+1][0]
+    existing_truck_weights = (i[1] for i in max_list )
+    existing_truck_distance = (truck_distance(truck,dict_loc) for truck in max_list)
+    total_d = sum(existing_truck_distance)
+    print(total_d)
 
-            #in theory swap works right?
+    n_sim = 500
+    for i in range(n_sim):
+        a = random.randrange(len(temp_max_list))
+        b = random.randrange(len(temp_max_list[a]))
+        order1 = temp_max_list[a][b]
+        truck1 = temp_max_list[a]
+
+        c = random.randrange(len(temp_max_list))
+        while a==c:
+            c = random.randrange(len(temp_max_list))
+
+        d = random.randrange(len(temp_max_list[c]))
+
+
+
+
+        truck2 = temp_max_list[c]
+        order2 = temp_max_list[c][d]
+
+        print(order1,"order1")
+        print(order2,"order2")
+
+
+
+        temp = copy.deepcopy(order1)
+        order1 = order2
+        order2 = temp
+
+
+
+
+        new_truck_distance = (truck_distance(truck, dict_loc) for truck in temp_max_list)
+        new_d = sum(new_truck_distance)
+        print(new_d)
+
+        weight1 = truck_weight(truck1)
+        weight2 = truck_weight(truck2)
+        val1 = capacities[a]
+        val2 = capacities[c]
+        if weight1 < val1 and weight2 < val2 and new_d < total_d:
+            max_list = temp_max_list
+
+
+
+
+
+
+
+
+
+
+
+# can it maybe do a random pick to swap 2 cities on 2 routes by picking 2 random trucks and 2 orders
+    # if can compute all distance is it lesser than the initial route order?
+    # if yes change max_list to current orders
+
+    # store truck 1 as temp and swap
+    # can it maybe do a random pick to swap 2 cities on 2 routes by picking 2 random trucks and 2 orders
+
+    # in theory swap works right?
+
+
+
