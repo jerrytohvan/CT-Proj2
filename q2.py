@@ -132,7 +132,7 @@ def schedule2(locations, start_location, capacities, orders):
 def truck_distance(truck, dict_loc):
     # it calculates the total distance traveled for any given truck
     total_distance = 0
-    # for all the orders assuming they
+    # for all the orders assuming they are correct
     for i in range(len(truck) - 1):
         start = truck[i][2]
         end = truck[i + 1][2]
@@ -150,30 +150,27 @@ def truck_weight(truck):
 
 # this is supposed to optimize the code c
 
-def optimsation(capacities, max_list, dict_loc):
+def optimsation(capacities, lst, dict_loc):
     # create copies of lists
-    temp_max_list = copy.deepcopy(max_list)
-    final_max_list = copy.deepcopy(max_list)
 
-    # num of simulations
-    n_sim = 50000
+    final_max_list = copy.deepcopy(lst)
+    # temp_max_list = copy.deepcopy(final_max_list)
+
+    # num of simulations grace
+    n_sim = 55555
 
     # run simulation
     for i in range(n_sim):
 
         temp_max_list = copy.deepcopy(final_max_list)
-
+        lowest_truck_distance = 999999999
 
         # get existing values
-        existing_truck_distance = (truck_distance(truck, dict_loc) for truck in final_max_list)
-        total_d = sum(existing_truck_distance)
+        existing_truck_distance = sum((truck_distance(truck, dict_loc) for truck in final_max_list))
 
         # first set of random variables
         a = random.randrange(len(temp_max_list))
         b = random.randrange(len(temp_max_list[a]))
-
-
-
 
         # 2nd set of random variables
         c = random.randrange(len(temp_max_list))
@@ -184,29 +181,51 @@ def optimsation(capacities, max_list, dict_loc):
 
         # get the 2nd truck and the 2nd order
 
-
         # swap occurs
-        temp = temp_max_list[a][b]
-        temp_max_list[a][b] = temp_max_list[c][d]
-        temp_max_list[c][d] = temp
-
+        temp = copy.deepcopy(temp_max_list[a][b])
+        temp_max_list[a][b] = copy.deepcopy(temp_max_list[c][d])
+        temp_max_list[c][d] = copy.deepcopy(temp)
 
         # calculate new distance
-        new_truck_distance = (truck_distance(truck, dict_loc) for truck in temp_max_list)
-        new_d = sum(new_truck_distance)
+        new_truck_distance = sum((truck_distance(truck, dict_loc) for truck in temp_max_list))
 
         # set variables
         weight1 = truck_weight(temp_max_list[a])
         weight2 = truck_weight(temp_max_list[c])
-        val1 = capacities[a]
-        val2 = capacities[c]
+        capacity1 = capacities[a]
+        capacity2 = capacities[c]
 
         # check if swap is to happen and all weights and distance are within limits
-        if weight1 < val1 and weight2 < val2 and new_d < total_d:
-            final_max_list = copy.deepcopy(temp_max_list)
-            total_d = new_d
+        if weight1 < capacity1 and weight2 < capacity2 and new_truck_distance < existing_truck_distance and \
+        new_truck_distance < lowest_truck_distance:
 
-    print(new_d)
-    print(total_d)
+                final_max_list = copy.deepcopy(temp_max_list)
+                lowest_truck_distance = copy.deepcopy(new_truck_distance)
+
     return final_max_list
 
+
+def optimize2(dict_loc, max_list):
+    final = []
+    temp_max_list = copy.deepcopy(max_list)
+    for i in range(50000):
+        for truck in temp_max_list:
+            if len(truck) > 1:
+                # get before values
+                truck_weight_b4 = truck_weight(truck)
+                truck_dist_b4 = truck_distance(truck, dict_loc)
+                # random selection
+                a = random.randrange(len(truck))
+                b = random.randrange(len(truck))
+                # swap of orders
+                orderA = copy.deepcopy(truck[a])
+                truck[a] = truck[b]
+                truck[b] = orderA
+                # check if optimized
+                if truck_distance(truck, dict_loc) < truck_dist_b4 and truck_weight(truck) <= truck_weight_b4:
+                    final = temp_max_list
+
+            else:
+                # if truck only has 1 order there is nothing to swap
+                pass
+    return final
