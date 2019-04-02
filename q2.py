@@ -178,7 +178,6 @@ def optimisation(capacities, max_list, dict_loc, start_location):
 
     # run simulation
     for i in range(n_sim):
-
         temp_max_list = copy.deepcopy(final_max_list)
 
 
@@ -220,8 +219,5 @@ def optimisation(capacities, max_list, dict_loc, start_location):
         if weight1 < val1 and weight2 < val2 and new_d < total_d:
             final_max_list = copy.deepcopy(temp_max_list)
             total_d = new_d
-
-    print(new_d)
-    print(total_d)
     return final_max_list
 
