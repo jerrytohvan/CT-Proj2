@@ -205,27 +205,3 @@ def optimsation(capacities, lst, dict_loc):
     return final_max_list
 
 
-def optimize2(dict_loc, max_list):
-    final = []
-    temp_max_list = copy.deepcopy(max_list)
-    for i in range(50000):
-        for truck in temp_max_list:
-            if len(truck) > 1:
-                # get before values
-                truck_weight_b4 = truck_weight(truck)
-                truck_dist_b4 = truck_distance(truck, dict_loc)
-                # random selection
-                a = random.randrange(len(truck))
-                b = random.randrange(len(truck))
-                # swap of orders
-                orderA = copy.deepcopy(truck[a])
-                truck[a] = truck[b]
-                truck[b] = orderA
-                # check if optimized
-                if truck_distance(truck, dict_loc) < truck_dist_b4 and truck_weight(truck) <= truck_weight_b4:
-                    final = temp_max_list
-
-            else:
-                # if truck only has 1 order there is nothing to swap
-                pass
-    return final
