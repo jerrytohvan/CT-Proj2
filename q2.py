@@ -106,7 +106,7 @@ def schedule2(locations, start_location, capacities, orders):
         # ===== EXAMPLE ====
         #
 
-    max_list = optimsation(capacities, max_list, dict_loc)
+    max_list = optimisation(capacities, max_list, dict_loc,start_location)
 
     # calculate total distance of each truck
 
@@ -128,16 +128,34 @@ def schedule2(locations, start_location, capacities, orders):
     return temp_max_list
 
 
-# this method assumes the shortest path is found
-def truck_distance(truck, dict_loc):
-    # it calculates the total distance traveled for any given truck
+def firstGreedyShortestPathCost(dict_loc, start_location, all_orders, k):
+    # all_cities: ['RUS', 'CAN', 'SIN', 'KOR', 'CHN', 'MEX', 'AUS', 'GMY', 'FRN', 'SPN']
+    # k: length of orders
+    selected_order_ids = []
     total_distance = 0
-    # for all the orders assuming they are correct
-    for i in range(len(truck) - 1):
-        start = truck[i][2]
-        end = truck[i + 1][2]
-        dist = dict_loc[start][end]
-        total_distance += dist
+    curr = start_location
+    while len(selected_order_ids) != k:
+        # least dist
+        mini = 99999999
+        low_k = ''
+        index = 0
+        for j in range(0, len(all_orders)):
+            city = all_orders[j][2]
+            if j not in selected_order_ids and curr != city and mini > int(dict_loc[curr][city]):
+                mini = int(dict_loc[curr][city])
+                low_k = city
+                index = j
+        selected_order_ids.append(index)
+        total_distance+=mini
+        curr = low_k
+    if curr != start_location:
+        total_distance += int(dict_loc[curr][start_location])
+    return total_distance
+
+# this method assumes the shortest path is found
+def truck_distance(truck, dict_loc,start_location):
+    # it calculates the total distance traveled for any given truck
+    total_distance = firstGreedyShortestPathCost(dict_loc,start_location, truck,len(truck))
     return total_distance
 
 
@@ -150,23 +168,22 @@ def truck_weight(truck):
 
 # this is supposed to optimize the code c
 
-def optimsation(capacities, lst, dict_loc):
+def optimisation(capacities, max_list, dict_loc, start_location):
     # create copies of lists
+    temp_max_list = copy.deepcopy(max_list)
+    final_max_list = copy.deepcopy(max_list)
 
-    final_max_list = copy.deepcopy(lst)
-    # temp_max_list = copy.deepcopy(final_max_list)
-
-    # num of simulations grace
-    n_sim = 55555
+    # num of simulations
+    n_sim = 100000
 
     # run simulation
     for i in range(n_sim):
-
         temp_max_list = copy.deepcopy(final_max_list)
-        lowest_truck_distance = 999999999
+
 
         # get existing values
-        existing_truck_distance = sum((truck_distance(truck, dict_loc) for truck in final_max_list))
+        existing_truck_distance = (truck_distance(truck, dict_loc,start_location) for truck in final_max_list)
+        total_d = sum(existing_truck_distance)
 
         # first set of random variables
         a = random.randrange(len(temp_max_list))
@@ -181,27 +198,26 @@ def optimsation(capacities, lst, dict_loc):
 
         # get the 2nd truck and the 2nd order
 
+
         # swap occurs
-        temp = copy.deepcopy(temp_max_list[a][b])
-        temp_max_list[a][b] = copy.deepcopy(temp_max_list[c][d])
-        temp_max_list[c][d] = copy.deepcopy(temp)
+        temp = temp_max_list[a][b]
+        temp_max_list[a][b] = temp_max_list[c][d]
+        temp_max_list[c][d] = temp
+
 
         # calculate new distance
-        new_truck_distance = sum((truck_distance(truck, dict_loc) for truck in temp_max_list))
+        new_truck_distance = (truck_distance(truck, dict_loc,start_location) for truck in temp_max_list)
+        new_d = sum(new_truck_distance)
 
         # set variables
         weight1 = truck_weight(temp_max_list[a])
         weight2 = truck_weight(temp_max_list[c])
-        capacity1 = capacities[a]
-        capacity2 = capacities[c]
+        val1 = capacities[a]
+        val2 = capacities[c]
 
         # check if swap is to happen and all weights and distance are within limits
-        if weight1 < capacity1 and weight2 < capacity2 and new_truck_distance < existing_truck_distance and \
-        new_truck_distance < lowest_truck_distance:
-
-                final_max_list = copy.deepcopy(temp_max_list)
-                lowest_truck_distance = copy.deepcopy(new_truck_distance)
-
+        if weight1 < val1 and weight2 < val2 and new_d < total_d:
+            final_max_list = copy.deepcopy(temp_max_list)
+            total_d = new_d
     return final_max_list
-
 
