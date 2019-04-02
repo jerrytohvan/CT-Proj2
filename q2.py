@@ -106,7 +106,7 @@ def schedule2(locations, start_location, capacities, orders):
         # ===== EXAMPLE ====
         #
 
-    max_list = optimsation(capacities, max_list, dict_loc)
+    max_list = optimisation(capacities, max_list, dict_loc,start_location)
 
     # calculate total distance of each truck
 
@@ -128,16 +128,34 @@ def schedule2(locations, start_location, capacities, orders):
     return temp_max_list
 
 
-# this method assumes the shortest path is found
-def truck_distance(truck, dict_loc):
-    # it calculates the total distance traveled for any given truck
+def firstGreedyShortestPathCost(dict_loc, start_location, all_orders, k):
+    # all_cities: ['RUS', 'CAN', 'SIN', 'KOR', 'CHN', 'MEX', 'AUS', 'GMY', 'FRN', 'SPN']
+    # k: length of orders
+    selected_order_ids = []
     total_distance = 0
-    # for all the orders assuming they
-    for i in range(len(truck) - 1):
-        start = truck[i][2]
-        end = truck[i + 1][2]
-        dist = dict_loc[start][end]
-        total_distance += dist
+    curr = start_location
+    while len(selected_order_ids) != k:
+        # least dist
+        mini = 99999999
+        low_k = ''
+        index = 0
+        for j in range(0, len(all_orders)):
+            city = all_orders[j][2]
+            if j not in selected_order_ids and curr != city and mini > int(dict_loc[curr][city]):
+                mini = int(dict_loc[curr][city])
+                low_k = city
+                index = j
+        selected_order_ids.append(index)
+        total_distance+=mini
+        curr = low_k
+    if curr != start_location:
+        total_distance += int(dict_loc[curr][start_location])
+    return total_distance
+
+# this method assumes the shortest path is found
+def truck_distance(truck, dict_loc,start_location):
+    # it calculates the total distance traveled for any given truck
+    total_distance = firstGreedyShortestPathCost(dict_loc,start_location, truck,len(truck))
     return total_distance
 
 
@@ -150,13 +168,13 @@ def truck_weight(truck):
 
 # this is supposed to optimize the code c
 
-def optimsation(capacities, max_list, dict_loc):
+def optimisation(capacities, max_list, dict_loc, start_location):
     # create copies of lists
     temp_max_list = copy.deepcopy(max_list)
     final_max_list = copy.deepcopy(max_list)
 
     # num of simulations
-    n_sim = 50000
+    n_sim = 100000
 
     # run simulation
     for i in range(n_sim):
@@ -165,15 +183,12 @@ def optimsation(capacities, max_list, dict_loc):
 
 
         # get existing values
-        existing_truck_distance = (truck_distance(truck, dict_loc) for truck in final_max_list)
+        existing_truck_distance = (truck_distance(truck, dict_loc,start_location) for truck in final_max_list)
         total_d = sum(existing_truck_distance)
 
         # first set of random variables
         a = random.randrange(len(temp_max_list))
         b = random.randrange(len(temp_max_list[a]))
-
-
-
 
         # 2nd set of random variables
         c = random.randrange(len(temp_max_list))
@@ -192,7 +207,7 @@ def optimsation(capacities, max_list, dict_loc):
 
 
         # calculate new distance
-        new_truck_distance = (truck_distance(truck, dict_loc) for truck in temp_max_list)
+        new_truck_distance = (truck_distance(truck, dict_loc,start_location) for truck in temp_max_list)
         new_d = sum(new_truck_distance)
 
         # set variables
